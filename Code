@@ -13,7 +13,7 @@ var CONFIG = {
   lon:          -0.1344,
   cityName:     'London',
   bufferMeters: 20000,
-  startDate:    '2024-01-01',
+  startDate:    '2021-01-01',
   endDate:      '2026-01-01',
   chartScale:   5000,
   exportScale:  10000,
