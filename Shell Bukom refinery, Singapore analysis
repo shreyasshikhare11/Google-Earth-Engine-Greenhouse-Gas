@@ -1,0 +1,10 @@
+The One-Sentence Pitch
+
+"A Google Earth Engine application that uses free ESA Sentinel-5P satellite data to independently monitor greenhouse gas emissions from the Shell Bukom refinery in Singapore, producing time-series charts, anomaly detection, and regulatory threshold alerts — without ever setting foot on the facility."
+
+The Problem It Solves
+Industrial facilities self-report their emissions to regulators. Satellites provide independent verification that cannot be manipulated, hidden, or selectively reported. This code automates that verification continuously from 2019 to present.
+The Three-Layer Explanation (tailor to your audience)
+For a general audience: "We point a free satellite at an oil refinery and watch if it's leaking methane, carbon monoxide, or other harmful gases — and we can see if emissions are getting worse over time."
+For a technical audience: "We query the Sentinel-5P TROPOMI OFFL L3 collection on Google Earth Engine, apply per-product QA masking using available proxy bands (cloud fraction, AAI, uncertainty ratios), run a 3-tier gap-fill aggregation to produce unbroken monthly time-series, and compute local anomalies against a 50 km donut background to isolate the facility plume signal."
+For a policy/regulatory audience: "This implements the Tip-and-Cue satellite monitoring strategy — using broad free data to flag anomalies, then recommending targeted high-resolution follow-up — aligned with MRV (Monitoring, Reporting, Verification) frameworks for methane fees and carbon credit integrity."
