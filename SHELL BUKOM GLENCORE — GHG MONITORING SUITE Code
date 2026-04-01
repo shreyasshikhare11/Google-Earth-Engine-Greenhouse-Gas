@@ -75,9 +75,7 @@ var colCH4 = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CH4')
   .map(function(img) {
     var signal = img.select('CH4_column_volume_mixing_ratio_dry_air_bias_corrected');
     var uncert = img.select('CH4_column_volume_mixing_ratio_dry_air_uncertainty');
-    var mask   = uncert.divide(signal).lt(0.3)
-                   .and(signal.gt(1700))
-                   .and(signal.lt(2200));
+    var mask   = uncert.divide(signal).lt(0.3).and(signal.gt(1700)).and(signal.lt(2200));
     return signal
       .updateMask(mask)
       .rename('CH4_ppb')
@@ -86,7 +84,7 @@ var colCH4 = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CH4')
 
 // ── CO (mol/m²) ──────────────────────────────────────────────
 var colCO = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CO')
-  .filterBounds(bukomBuffer10km)
+  .filterBounds(bukom)
   .filterDate(START, END)
   .map(function(img) {
     var data = img.select('CO_column_number_density');
@@ -99,7 +97,7 @@ var colCO = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CO')
 
 // ── NO2 — tropospheric column (mol/m²) ───────────────────────
 var colNO2 = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_NO2')
-  .filterBounds(bukomBuffer10km)
+  .filterBounds(bukom)
   .filterDate(START, END)
   .map(function(img) {
     var data = img.select('tropospheric_NO2_column_number_density');
@@ -113,7 +111,7 @@ var colNO2 = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_NO2')
 
 // ── SO2 — total column (mol/m²) ──────────────────────────────
 var colSO2 = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_SO2')
-  .filterBounds(bukomBuffer10km)
+  .filterBounds(bukom)
   .filterDate(START, END)
   .map(function(img) {
     var data = img.select('SO2_column_number_density');
@@ -212,19 +210,19 @@ function addLegendEntry(panel, title, minVal, maxVal, decimals) {
   }));
 }
 
-addLegendEntry(legendPanel, 'CH4 (ppb, bias-corrected)', 1820, 1920, 0);
-addLegendEntry(legendPanel, 'CO (mol/m²)',               0.02, 0.10,  2);
-addLegendEntry(legendPanel, 'NO2 (mol/m²)',              0,    0.0003, 4);
-addLegendEntry(legendPanel, 'SO2 (mol/m²)',              0,    0.003,  3);
+addLegendEntry(legendPanel, 'CH4 (ppb)', 1820, 1920, 0);
+addLegendEntry(legendPanel, 'CO (mol/m²)', 0.02, 0.10,  2);
+addLegendEntry(legendPanel, 'NO2 (mol/m²)', 0,  0.0003, 4);
+addLegendEntry(legendPanel, 'SO2 (mol/m²)', 0,  0.003,  3);
 Map.add(legendPanel);
 
-Map.addLayer(colCH4.mean().clip(bukomBuffer10km),
+Map.addLayer(colCH4.mean().clip(bukom),
   {min: 1820, max: 1920, palette: SPECTRAL}, 'CH4 — Mean (ppb, bias-corrected)');
-Map.addLayer(colCO.mean().clip(bukomBuffer10km),
+Map.addLayer(colCO.mean().clip(bukom),
   {min: 0.02, max: 0.10, palette: SPECTRAL}, 'CO — Mean (mol/m²)');
-Map.addLayer(colNO2.mean().clip(bukomBuffer10km),
+Map.addLayer(colNO2.mean().clip(bukom),
   {min: 0, max: 0.0003, palette: SPECTRAL},  'NO2 — Tropospheric Mean (mol/m²)');
-Map.addLayer(colSO2.mean().clip(bukomBuffer10km),
+Map.addLayer(colSO2.mean().clip(bukom),
   {min: 0, max: 0.003,  palette: SPECTRAL},  'SO2 — Mean (mol/m²)');
 
 // ============================================================
@@ -235,8 +233,8 @@ function buildTimeSeriesChart(monthlyCol, band, gasLabel, units, threshold) {
   var series = monthlyCol.map(function(img) {
     var raw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer10km,
-      scale:      7000,
+      geometry:   bukom,
+      scale:      5000,
       maxPixels:  1e9,
       bestEffort: true
     }).get(band);
@@ -289,8 +287,8 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
   // Regional baseline over the 50 km donut ring (excludes 10 km core)
   var regionalRaw = monthlyCol.mean().reduceRegion({
     reducer:    ee.Reducer.mean(),
-    geometry:   ring50km,
-    scale:      7000,
+    geometry:   bukom,
+    scale:      5000,
     maxPixels:  1e9,
     bestEffort: true
   }).get(band);
@@ -300,18 +298,16 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
   var anomalySeries = monthlyCol.map(function(img) {
     var localRaw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer10km,
-      scale:      7000,
+      geometry:   bukom,
+      scale:      5000,
       maxPixels:  1e9,
       bestEffort: true
     }).get(band);
 
-    var local = safeNum(localRaw, regionalMean);  // 2 args only — NO third arg
-
+    var local = safeNum(localRaw, regionalMean); 
     return ee.Feature(null, {
       'Anomaly':           local.subtract(regionalMean),
       'system:time_start': img.get('system:time_start')
-      // 'Threshold' intentionally removed — was undefined, caused crash
     });
   });
 
@@ -337,7 +333,6 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
   );
 }
 
-// NOTE: buildAnomalyChart now takes 4 args only — no threshold
 print('═══ ANOMALY BAR CHARTS ═══');
 buildAnomalyChart(mCH4, 'CH4_ppb',    'CH4', 'ppb');
 buildAnomalyChart(mCO,  'CO_mol_m2',  'CO',  'mol/m²');
@@ -352,8 +347,8 @@ function detectExceedances(monthlyCol, band, threshold, gasLabel, units) {
   var fc = monthlyCol.map(function(img) {
     var raw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer10km,
-      scale:      7000,
+      geometry:   bukom,
+      scale:      5000,
       maxPixels:  1e9,
       bestEffort: true
     }).get(band);
