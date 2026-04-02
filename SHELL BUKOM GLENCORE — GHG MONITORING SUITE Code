@@ -23,7 +23,7 @@ Map.centerObject(bukom, 13);
 Map.addLayer(bukom,           {color: 'FF0000', opacity: 0.4}, 'Shell Bukom Island');
 
 // ── 2. STUDY PERIOD ──────────────────────────────────────────
-var START = '2018-01-01';
+var START = '2022-01-01';
 var END   = '2026-03-01';
 
 // ── 3. REGULATORY THRESHOLDS ─────────────────────────────────
@@ -207,7 +207,7 @@ function addLegendEntry(panel, title, minVal, maxVal, decimals) {
   }));
 }
 
-addLegendEntry(legendPanel, 'CH4 (ppb)', 1820, 1920, 0);
+addLegendEntry(legendPanel, 'CH4 (ppb)', 1820, 1950, 0);
 addLegendEntry(legendPanel, 'CO (mol/m²)', 0.02, 0.10,  2);
 addLegendEntry(legendPanel, 'NO2 (mol/m²)', 0,  0.0003, 4);
 addLegendEntry(legendPanel, 'SO2 (mol/m²)', 0,  0.003,  3);
@@ -230,8 +230,8 @@ function buildTimeSeriesChart(monthlyCol, band, gasLabel, units, threshold) {
   var series = monthlyCol.map(function(img) {
     var raw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukom, //bukomBuffer10km,
-      scale:      5000,
+      geometry:   bukomBuffer10km,
+      scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
     }).get(band);
@@ -285,7 +285,7 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
   var regionalRaw = monthlyCol.mean().reduceRegion({
     reducer:    ee.Reducer.mean(),
     geometry:   bukomBuffer10km,
-    scale:      5000,
+    scale:      7000,
     maxPixels:  1e9,
     bestEffort: true
   }).get(band);
@@ -296,7 +296,7 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
     var localRaw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
       geometry:   bukomBuffer10km,
-      scale:      5000,
+      scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
     }).get(band);
@@ -345,7 +345,7 @@ function detectExceedances(monthlyCol, band, threshold, gasLabel, units) {
     var raw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
       geometry:   bukomBuffer10km,
-      scale:      5000,
+      scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
     }).get(band);
