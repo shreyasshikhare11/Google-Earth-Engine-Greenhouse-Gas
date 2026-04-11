@@ -17,18 +17,18 @@ var bukom = ee.Geometry.Polygon([[
 ]], null, false);
 
 // 10 km buffer — guarantees TROPOMI pixel coverage over the ~3 km² island
-var bukomBuffer10km = bukom.buffer(10000);
+var bukomBuffer6km = bukom.buffer(5500);
 
 Map.centerObject(bukom, 13);
 Map.addLayer(bukom,           {color: 'FF0000', opacity: 0.4}, 'Shell Bukom Island');
 
 // ── 2. STUDY PERIOD ──────────────────────────────────────────
-var START = '2022-01-01';
-var END   = '2026-03-01';
+var START = '2020-01-01';
+var END   = '2026-01-01';
 
 // ── 3. REGULATORY THRESHOLDS ─────────────────────────────────
 var THRESHOLDS = {
-  CH4: 1920,
+  CH4: 1935,
   CO:  0.04,
   NO2: 0.0002,
   SO2: 0.0005
@@ -67,7 +67,7 @@ function safeMean(col, outBand, globalMean) {
 // Uncertainty relaxed to 30% for tropical humid conditions.
 // Hard bounds 1700–2200 ppb reject retrieval artefacts.
 var colCH4 = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CH4')
-  .filterBounds(bukomBuffer10km)
+  .filterBounds(bukomBuffer6km)
   .filterDate(START, END)
   .map(function(img) {
     var signal = img.select('CH4_column_volume_mixing_ratio_dry_air_bias_corrected');
@@ -146,8 +146,6 @@ function toMonthly(col, outBand) {
     );
     var t2 = safeMean(col2, outBand, globalMean);
 
-    // Tier 3 — long-term period mean (always has 1 band, never empty)
-    // .unmask() is now safe: both t1 and globalMean always have 1 band
     var filled = t1
       .unmask(t2)
       .unmask(globalMean);
@@ -230,7 +228,7 @@ function buildTimeSeriesChart(monthlyCol, band, gasLabel, units, threshold) {
   var series = monthlyCol.map(function(img) {
     var raw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer10km,
+      geometry:   bukomBuffer6km,
       scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
@@ -281,10 +279,9 @@ buildTimeSeriesChart(mSO2, 'SO2_mol_m2', 'SO2', 'mol/m²', THRESHOLDS.SO2);
 // ============================================================
 
 function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
-  // Regional baseline over the 50 km donut ring (excludes 10 km core)
   var regionalRaw = monthlyCol.mean().reduceRegion({
     reducer:    ee.Reducer.mean(),
-    geometry:   bukomBuffer10km,
+    geometry:   bukomBuffer6km,
     scale:      7000,
     maxPixels:  1e9,
     bestEffort: true
@@ -295,7 +292,7 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
   var anomalySeries = monthlyCol.map(function(img) {
     var localRaw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer10km,
+      geometry:   bukomBuffer6km,
       scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
@@ -312,7 +309,7 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
     ui.Chart.feature.byFeature(anomalySeries, 'system:time_start', 'Anomaly')
       .setChartType('ColumnChart')
       .setOptions({
-        title: gasLabel + ' Anomaly (' + units + ') — 10 km Bukom Zone\n' +
+        title: gasLabel + ' Anomaly (' + units + ') — 6 km Bukom Zone\n' +
                'Positive = industrial plume above regional background',
         hAxis: {title: 'Date', format: 'MMM yyyy', slantedText: true, slantedTextAngle: 45},
         vAxis: {
@@ -344,13 +341,13 @@ function detectExceedances(monthlyCol, band, threshold, gasLabel, units) {
   var fc = monthlyCol.map(function(img) {
     var raw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer10km,
+      geometry:   bukomBuffer6km,
       scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
     }).get(band);
 
-    var val = safeNum(raw, 0);  // 2 args only
+    var val = safeNum(raw, 0);
 
     return ee.Feature(null, {
       'value':    val,
@@ -398,6 +395,6 @@ print('  Study period: ' + START + ' → ' + END);
 print('  Gases monitored: CH4, CO, NO2, SO2');
 print('  3-tier gap-fill: ACTIVE (no broken lines)');
 print('  Regulatory thresholds drawn on all charts');
-print('  Anomaly charts: Bukom minus 50 km regional mean');
+print('  Anomaly charts: Bukom minus 6 km regional mean');
 print('  Tip-and-Cue panel: top-right corner of map');
 print('════════════════════════════════════════');
