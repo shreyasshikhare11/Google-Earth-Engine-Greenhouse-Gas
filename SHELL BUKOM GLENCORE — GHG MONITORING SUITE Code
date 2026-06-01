@@ -16,8 +16,8 @@ var bukom = ee.Geometry.Polygon([[
   [103.79404917147764, 1.2543149457128038]
 ]], null, false);
 
-// 5 km buffer — guarantees TROPOMI pixel coverage over the ~3 km² island
-var bukomBuffer5km = bukom.buffer(5000);
+// 3 km buffer — guarantees TROPOMI pixel coverage over the ~3 km² island
+var bukomBuffer3km = bukom.buffer(3000);
 
 Map.centerObject(bukom, 13);
 Map.addLayer(bukom,           {color: 'FF0000', opacity: 0.4}, 'Shell Bukom Island');
@@ -67,7 +67,7 @@ function safeMean(col, outBand, globalMean) {
 // Uncertainty relaxed to 30% for tropical humid conditions.
 // Hard bounds 1700–2200 ppb reject retrieval artefacts.
 var colCH4 = ee.ImageCollection('COPERNICUS/S5P/OFFL/L3_CH4')
-  .filterBounds(bukomBuffer5km)
+  .filterBounds(bukomBuffer3km)
   .filterDate(START, END)
   .map(function(img) {
     var signal = img.select('CH4_column_volume_mixing_ratio_dry_air_bias_corrected');
@@ -228,7 +228,7 @@ function buildTimeSeriesChart(monthlyCol, band, gasLabel, units, threshold) {
   var series = monthlyCol.map(function(img) {
     var raw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer5km,
+      geometry:   bukomBuffer3km,
       scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
@@ -281,7 +281,7 @@ buildTimeSeriesChart(mSO2, 'SO2_mol_m2', 'SO2', 'mol/m²', THRESHOLDS.SO2);
 function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
   var regionalRaw = monthlyCol.mean().reduceRegion({
     reducer:    ee.Reducer.mean(),
-    geometry:   bukomBuffer5km,
+    geometry:   bukomBuffer3km,
     scale:      7000,
     maxPixels:  1e9,
     bestEffort: true
@@ -292,7 +292,7 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
   var anomalySeries = monthlyCol.map(function(img) {
     var localRaw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer5km,
+      geometry:   bukomBuffer3km,
       scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
@@ -309,7 +309,7 @@ function buildAnomalyChart(monthlyCol, band, gasLabel, units) {
     ui.Chart.feature.byFeature(anomalySeries, 'system:time_start', 'Anomaly')
       .setChartType('ColumnChart')
       .setOptions({
-        title: gasLabel + ' Anomaly (' + units + ') — 5 km Bukom Zone\n' +
+        title: gasLabel + ' Anomaly (' + units + ') — 3 km Bukom Zone\n' +
                'Positive = industrial plume above regional background',
         hAxis: {title: 'Date', format: 'MMM yyyy', slantedText: true, slantedTextAngle: 45},
         vAxis: {
@@ -341,7 +341,7 @@ function detectExceedances(monthlyCol, band, threshold, gasLabel, units) {
   var fc = monthlyCol.map(function(img) {
     var raw = img.reduceRegion({
       reducer:    ee.Reducer.mean(),
-      geometry:   bukomBuffer5km,
+      geometry:   bukomBuffer3km,
       scale:      7000,
       maxPixels:  1e9,
       bestEffort: true
@@ -379,7 +379,7 @@ var tipPanel = ui.Panel({
 tipPanel.add(ui.Label('Tip-and-Cue Strategy',
   {fontWeight: 'bold', fontSize: '13px', margin: '0 0 6px 0'}));
 [
-  '① TIP — S5P TROPOMI detects regional GHG anomalies at ~ 5 km resolution.',
+  '① TIP — S5P TROPOMI detects regional GHG anomalies at ~ 3 km resolution.',
   '② CUE — Positive anomaly months trigger GHGSat (~25 m) zoom-in: exact source + kg/hr rate.',
   '③ VERIFY — Multi-year stacking reveals trends, and patterns pashing the thershold.',
   '④ REGULATE — Dashed threshold lines flag breaches and GHG credit verification.'
@@ -394,6 +394,6 @@ print('  Shell Bukom GHG Monitoring — READY');
 print('  Study period: ' + START + ' → ' + END);
 print('  Gases monitored: CH4, CO, NO2, SO2');
 print('  Regulatory thresholds drawn on all charts');
-print('  Anomaly charts: Bukom minus 5 km regional mean');
+print('  Anomaly charts: Bukom minus 3 km regional mean');
 print('  Tip-and-Cue panel: top-right corner of map');
 print('════════════════════════════════════════');
