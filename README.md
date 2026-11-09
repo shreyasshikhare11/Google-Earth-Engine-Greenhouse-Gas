@@ -13,3 +13,5 @@ The map displays the average concentration of each gas over the selected period,
 The time-series charts break that data down month by month, showing how each gas concentration has changed over time. We've also built in a trend line, so you can immediately see whether pollution levels are rising, falling, or holding steady across the period.
 
 To run this for a different city, a different gas, or a different time period, we change just a few lines. It is fully redeployable with minimal effort.
+
+https://data.carbonmapper.org/?details=CO2_1A2_250m_103.75645_1.23295%3Fstatus%3Dnot_deleted&plume_id=tan20250303t035317c00s4001-C#14.23/1.23322/103.75748
